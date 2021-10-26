@@ -576,6 +576,8 @@ func ScaleUp(context *context.AutoscalingContext, processors *ca_processors.Auto
 					buffer.WriteString(ng.Id())
 				}
 				klog.V(1).Infof("Splitting scale-up between %v similar node groups: {%v}", len(targetNodeGroups), buffer.String())
+			} else {
+				klog.V(1).Infof("Only found 1 target nodeGroup: %v", targetNodeGroups[0].Id)
 			}
 		}
 		scaleUpInfos, typedErr := processors.NodeGroupSetProcessor.BalanceScaleUpBetweenGroups(

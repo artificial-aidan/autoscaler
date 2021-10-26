@@ -3,7 +3,7 @@ all: $(addprefix build-arch-,$(ALL_ARCH))
 
 TAG?=dev
 FLAGS=
-LDFLAGS?=-s
+LDFLAGS?=
 ENVVAR=CGO_ENABLED=0
 GOOS?=linux
 GOARCH?=$(shell go env GOARCH)

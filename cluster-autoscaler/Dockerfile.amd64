@@ -11,9 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-ARG BASEIMAGE=gcr.io/distroless/static:latest-amd64
-FROM $BASEIMAGE
-LABEL maintainer="Marcin Wielgus <mwielgus@google.com>"
+FROM golang:1.17 as build
 
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+# RUN echo $GOPATH
+# RUN echo $GOBIN
+# RUN echo $GOROOT
+# RUN ls /go/
+
+# ARG BASEIMAGE=gcr.io/distroless/static:latest-amd64-debug
+# FROM gcr.io/distroless/static:debug-amd64
+# LABEL maintainer="Marcin Wielgus <mwielgus@google.com>"
+
+COPY . /
 COPY cluster-autoscaler-amd64 /cluster-autoscaler
-CMD ["/cluster-autoscaler"]
+# CMD ["/cluster-autoscaler"]
+
+# COPY /go/bin/dlv /dlv
+# RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+CMD ["dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/cluster-autoscaler", "--", "--expander=random"]
