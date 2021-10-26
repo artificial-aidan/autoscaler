@@ -21,6 +21,7 @@ import (
 
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	klog "k8s.io/klog/v2"
 	schedulerframework "k8s.io/kubernetes/pkg/scheduler/framework"
 )
 
@@ -111,6 +112,8 @@ func CreateGenericNodeInfoComparator(extraIgnoredLabels []string) NodeInfoCompar
 // are similar enough to likely be the same type of machine and if the set of labels
 // is the same (except for a set of labels passed in to be ignored like hostname or zone).
 func IsCloudProviderNodeInfoSimilar(n1, n2 *schedulerframework.NodeInfo, ignoredLabels map[string]bool) bool {
+	klog.V(2).Infof("Ignored Labels: %v", ignoredLabels)
+
 	capacity := make(map[apiv1.ResourceName][]resource.Quantity)
 	allocatable := make(map[apiv1.ResourceName][]resource.Quantity)
 	free := make(map[apiv1.ResourceName][]resource.Quantity)
@@ -131,11 +134,13 @@ func IsCloudProviderNodeInfoSimilar(n1, n2 *schedulerframework.NodeInfo, ignored
 
 	for kind, qtyList := range capacity {
 		if len(qtyList) != 2 {
+			klog.V(2).Infof("adj: qtyList != 2")
 			return false
 		}
 		switch kind {
 		case apiv1.ResourceMemory:
 			if !resourceListWithinTolerance(qtyList, MaxCapacityMemoryDifferenceRatio) {
+				klog.V(2).Infof("adj: memory not within tolerance")
 				return false
 			}
 		default:
@@ -143,6 +148,7 @@ func IsCloudProviderNodeInfoSimilar(n1, n2 *schedulerframework.NodeInfo, ignored
 			// If this is ever changed, enforcing MaxCoresTotal limits
 			// as it is now may no longer work.
 			if qtyList[0].Cmp(qtyList[1]) != 0 {
+				klog.V(2).Infof("adj: other resource not within tolerance")
 				return false
 			}
 		}
@@ -150,13 +156,16 @@ func IsCloudProviderNodeInfoSimilar(n1, n2 *schedulerframework.NodeInfo, ignored
 
 	// For allocatable and free we allow resource quantities to be within a few % of each other
 	if !resourceMapsWithinTolerance(allocatable, MaxAllocatableDifferenceRatio) {
+		klog.V(2).Infof("adj: resourcemaps allocatable not equal")
 		return false
 	}
 	if !resourceMapsWithinTolerance(free, MaxFreeDifferenceRatio) {
+		klog.V(2).Infof("adj: resourcemaps free not equal")
 		return false
 	}
 
 	if !compareLabels(nodes, ignoredLabels) {
+		klog.V(2).Infof("adj: labels not equal")
 		return false
 	}
 

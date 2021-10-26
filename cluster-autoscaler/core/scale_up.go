@@ -556,6 +556,9 @@ func ScaleUp(context *context.AutoscalingContext, processors *ca_processors.Auto
 			if typedErr != nil {
 				return &status.ScaleUpStatus{Result: status.ScaleUpError, CreateNodeGroupResults: createNodeGroupResults}, typedErr.AddPrefix("Failed to find matching node groups: ")
 			}
+			for _, ng := range similarNodeGroups {
+				klog.V(2).Infof("Similar node group: %v", ng.Id())
+			}
 			similarNodeGroups = filterNodeGroupsByPods(similarNodeGroups, bestOption.Pods, expansionOptions)
 			for _, ng := range similarNodeGroups {
 				if clusterStateRegistry.IsNodeGroupSafeToScaleUp(ng, now) {
@@ -577,7 +580,7 @@ func ScaleUp(context *context.AutoscalingContext, processors *ca_processors.Auto
 				}
 				klog.V(1).Infof("Splitting scale-up between %v similar node groups: {%v}", len(targetNodeGroups), buffer.String())
 			} else {
-				klog.V(1).Infof("Only found 1 target nodeGroup: %v", targetNodeGroups[0].Id)
+				klog.V(1).Infof("Only found 1 target nodeGroup: %v", targetNodeGroups[0].Id())
 			}
 		}
 		scaleUpInfos, typedErr := processors.NodeGroupSetProcessor.BalanceScaleUpBetweenGroups(
@@ -652,6 +655,7 @@ func filterNodeGroupsByPods(
 
 groupsloop:
 	for _, group := range groups {
+		klog.V(1).Infof("Checking group: %v", group.Id())
 		option, found := expansionOptions[group.Id()]
 		if !found {
 			klog.V(1).Infof("No info about pods passing predicates found for group %v, skipping it from scale-up consideration", group.Id())

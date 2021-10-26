@@ -17,6 +17,7 @@ limitations under the License.
 package nodegroupset
 
 import (
+	"encoding/json"
 	"sort"
 
 	"k8s.io/autoscaler/cluster-autoscaler/cloudprovider"
@@ -62,6 +63,16 @@ func (b *BalancingNodeGroupSetProcessor) FindSimilarNodeGroups(context *context.
 		}
 		if comparator(nodeInfo, ngNodeInfo) {
 			result = append(result, ng)
+		} else {
+			nodeInfoJ, err := json.Marshal(nodeInfo)
+			if err != nil {
+				klog.Fatal("nodeInfo bad marshal")
+			}
+			ngNodeInfoJ, err := json.Marshal(ngNodeInfo)
+			if err != nil {
+				klog.Fatal("ngNodeInfo bad marshal")
+			}
+			klog.V(2).Infof("Node group did not match: %s, %s", string(nodeInfoJ), string(ngNodeInfoJ))
 		}
 	}
 	return result, nil
