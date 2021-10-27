@@ -61,16 +61,17 @@ func (b *BalancingNodeGroupSetProcessor) FindSimilarNodeGroups(context *context.
 		if comparator == nil {
 			klog.Fatal("BalancingNodeGroupSetProcessor comparator not set")
 		}
+		// klog.V(1).Infof("Comparing %v to %v", nodeInfo.Id(), ngNodeInfo.Id())
 		if comparator(nodeInfo, ngNodeInfo) {
 			result = append(result, ng)
 		} else {
-			nodeInfoJ, err := json.Marshal(nodeInfo)
+			nodeInfoJ, err := json.Marshal(nodeInfo.Node())
 			if err != nil {
-				klog.Fatal("nodeInfo bad marshal")
+				klog.Errorf("nodeInfo bad marshal: %v", err)
 			}
-			ngNodeInfoJ, err := json.Marshal(ngNodeInfo)
+			ngNodeInfoJ, err := json.Marshal(ngNodeInfo.Node())
 			if err != nil {
-				klog.Fatal("ngNodeInfo bad marshal")
+				klog.Errorf("ngNodeInfo bad marshal: %v", err)
 			}
 			klog.V(2).Infof("Node group did not match: %s, %s", string(nodeInfoJ), string(ngNodeInfoJ))
 		}

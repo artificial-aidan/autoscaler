@@ -93,6 +93,12 @@ func TestFindSimilarNodeGroupsCustomLabels(t *testing.T) {
 	ni1, ni2, ni3 := buildBasicNodeGroups(context)
 	ni1.Node().Labels["example.com/ready"] = "true"
 	ni2.Node().Labels["example.com/ready"] = "false"
+	ni2.Node().Labels["example.com/ready1"] = "false"
+	ni2.UsedPorts = schedulerframework.HostPortInfo{
+		"string": {
+			schedulerframework.ProtocolPort{}: {},
+		},
+	}
 
 	processor := NewDefaultNodeGroupSetProcessor([]string{"example.com/ready"})
 	basicSimilarNodeGroupsTest(t, context, processor, ni1, ni2, ni3)

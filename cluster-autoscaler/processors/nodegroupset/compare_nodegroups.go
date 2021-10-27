@@ -56,8 +56,9 @@ type NodeInfoComparator func(n1, n2 *schedulerframework.NodeInfo) bool
 
 func resourceMapsWithinTolerance(resources map[apiv1.ResourceName][]resource.Quantity,
 	maxDifferenceRatio float64) bool {
-	for _, qtyList := range resources {
+	for qtyKey, qtyList := range resources {
 		if !resourceListWithinTolerance(qtyList, maxDifferenceRatio) {
+			klog.V(1).Infof("Resource %v not within tolerance", qtyKey)
 			return false
 		}
 	}
@@ -70,6 +71,7 @@ func resourceListWithinTolerance(qtyList []resource.Quantity, maxDifferenceRatio
 	}
 	larger := math.Max(float64(qtyList[0].MilliValue()), float64(qtyList[1].MilliValue()))
 	smaller := math.Min(float64(qtyList[0].MilliValue()), float64(qtyList[1].MilliValue()))
+	klog.V(1).Infof("Resource 1: %v, resource2: %v", larger, smaller)
 	return larger-smaller <= larger*maxDifferenceRatio
 }
 
@@ -83,8 +85,16 @@ func compareLabels(nodes []*schedulerframework.NodeInfo, ignoredLabels map[strin
 			}
 		}
 	}
-	for _, labelValues := range labels {
-		if len(labelValues) != 2 || labelValues[0] != labelValues[1] {
+	for labelKey, labelValues := range labels {
+		if len(labelValues) != 2 {
+			if len(labelValues) != 1 {
+				// Should not be here
+				return false
+			}
+			klog.V(1).Infof("A node is missing the label: %v", labelKey)
+			return false
+		} else if labelValues[0] != labelValues[1] {
+			klog.V(1).Infof("Label mismatch for label: %v\n%v, %v", labelKey, labelValues[0], labelValues[1])
 			return false
 		}
 	}
@@ -134,13 +144,13 @@ func IsCloudProviderNodeInfoSimilar(n1, n2 *schedulerframework.NodeInfo, ignored
 
 	for kind, qtyList := range capacity {
 		if len(qtyList) != 2 {
-			klog.V(2).Infof("adj: qtyList != 2")
+			klog.V(2).Infof("adj: qtyList != 2 for resource: %v", kind)
 			return false
 		}
 		switch kind {
 		case apiv1.ResourceMemory:
 			if !resourceListWithinTolerance(qtyList, MaxCapacityMemoryDifferenceRatio) {
-				klog.V(2).Infof("adj: memory not within tolerance")
+				klog.V(2).Infof("adj: memory not within tolerance.")
 				return false
 			}
 		default:
